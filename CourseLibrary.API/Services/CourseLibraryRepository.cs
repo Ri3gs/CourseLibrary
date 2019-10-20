@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CourseLibrary.API.Helpers;
+using CourseLibrary.API.Models;
 using CourseLibrary.API.ResourceParameters;
 
 namespace CourseLibrary.API.Services
@@ -11,10 +12,12 @@ namespace CourseLibrary.API.Services
     public class CourseLibraryRepository : ICourseLibraryRepository, IDisposable
     {
         private readonly CourseLibraryContext _context;
+        private readonly IPropertyMappingService _propertyMappingService;
 
-        public CourseLibraryRepository(CourseLibraryContext context)
+        public CourseLibraryRepository(CourseLibraryContext context, IPropertyMappingService propertyMappingService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _propertyMappingService = propertyMappingService;
         }
 
         public void AddCourse(Guid authorId, Course course)
@@ -128,6 +131,12 @@ namespace CourseLibrary.API.Services
                 authorsCollection = authorsCollection.Where(author => author.MainCategory.Contains(searchQuery) ||
                                                                       author.FirstName.Contains(searchQuery) ||
                                                                       author.LastName.Contains(searchQuery));
+            }
+
+            if (!string.IsNullOrWhiteSpace(authorsResourceParameters.OrderBy))
+            {
+                var mappingDictionary = _propertyMappingService.GetPropertyMapping<AuthorDto, Author>();
+                authorsCollection = authorsCollection.ApplySort(authorsResourceParameters.OrderBy, mappingDictionary);
             }
 
             return PagedList<Author>.Create(
