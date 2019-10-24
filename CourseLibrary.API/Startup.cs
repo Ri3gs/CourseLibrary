@@ -4,6 +4,7 @@ using System.Net;
 using AutoMapper;
 using CourseLibrary.API.DbContexts;
 using CourseLibrary.API.Services;
+using Marvin.Cache.Headers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -29,6 +30,14 @@ namespace CourseLibrary.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpCacheHeaders(expirationModelOptions =>
+            {
+                expirationModelOptions.MaxAge = 60;
+                expirationModelOptions.CacheLocation = CacheLocation.Private;
+            }, validationModelOptions =>
+            {
+                validationModelOptions.MustRevalidate = true;
+            });
             services.AddTransient<IPropertyCheckerService, PropertyCheckerService>();
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
             services.AddTransient<ICourseLibraryRepository, CourseLibraryRepository>();
@@ -98,7 +107,8 @@ namespace CourseLibrary.API
                 });
             }
 
-            app.UseResponseCaching();
+            //app.UseResponseCaching();
+            app.UseHttpCacheHeaders();
 
             app.UseRouting();
 
